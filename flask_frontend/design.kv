@@ -1,0 +1,160 @@
+#:import utils kivy.utils
+#:import md_icons kivymd.icon_definitions.md_icons
+#:import colors kivymd.color_definitions.colors
+
+<WindowManager>:
+    FileUploader:
+
+<FileUploader>:
+    orientation: 'vertical'
+    padding: dp(20)
+    spacing: dp(15)
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex('#1A1A1A')
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: 0.35
+        spacing: dp(10)
+        
+        Label:
+            text: 'Data Management Tool'
+            size_hint_y: 0.15
+            bold: True
+            font_size: '24sp'
+            color: utils.get_color_from_hex('#FFFFFF')
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex('#2D2D2D')
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(10), dp(10), dp(10), dp(10)]
+        
+        Label:
+            text: 'Select a CSV or Excel file'
+            size_hint_y: 0.1
+            color: utils.get_color_from_hex('#B3B3B3')
+            font_size: '16sp'
+            
+        FileChooserIconView:
+            id: file_chooser
+            size_hint_y: 0.75
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex('#2D2D2D')
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(10), dp(10), dp(10), dp(10)]
+    
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.12
+        spacing: dp(15)
+        padding: [dp(5), dp(5), dp(5), dp(5)]
+        
+        Button:
+            id: upload_button
+            text: 'Upload File'
+            on_press: root.upload_file()
+            size_hint_x: 0.5
+            background_color: 0, 0, 0, 0
+            color: utils.get_color_from_hex('#FFFFFF')
+            bold: True
+            font_size: '16sp'
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex('#4A90E2')
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(8), dp(8), dp(8), dp(8)]
+            on_press:
+                self.background_color = utils.get_color_from_hex('#357ABD')
+            on_release:
+                self.background_color = utils.get_color_from_hex('#4A90E2')
+        
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_x: 0.5
+            spacing: dp(5)
+            
+            TextInput:
+                id: search_input
+                hint_text: 'Enter search query'
+                multiline: False
+                size_hint_x: 0.7
+                font_size: '16sp'
+                padding: [dp(15), dp(10), dp(15), dp(10)]
+                background_color: [0.2, 0.2, 0.2, 1]
+                foreground_color: [1, 1, 1, 1]
+                cursor_color: [0.3, 0.6, 0.9, 1]
+                hint_text_color: [0.5, 0.5, 0.5, 1]
+                disabled: False
+                readonly: False
+                write_tab: False
+                selection_color: [0.3, 0.6, 0.9, 1]
+                border: [0, 0, 0, 0]
+                border_radius: [dp(8), dp(8), dp(8), dp(8)]
+                background_normal: ''
+                background_active: ''
+                background_disabled_normal: ''
+                background_disabled_active: ''
+                text: ''
+                focus: False
+                on_text: root.on_search_text(self, self.text)
+            
+            Button:
+                id: search_button
+                text: 'Search'
+                on_press: root.search_data()
+                size_hint_x: 0.3
+                background_color: 0, 0, 0, 0
+                color: utils.get_color_from_hex('#FFFFFF')
+                bold: True
+                font_size: '16sp'
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#2ECC71')
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(8), dp(8), dp(8), dp(8)]
+                on_press:
+                    self.background_color = utils.get_color_from_hex('#27AE60')
+                on_release:
+                    self.background_color = utils.get_color_from_hex('#2ECC71')
+    
+    Label:
+        id: result_label
+        text: 'No data loaded'
+        size_hint_y: 0.05
+        bold: True
+        color: utils.get_color_from_hex('#FFFFFF')
+        font_size: '16sp'
+    
+    ScrollView:
+        id: table_scroll
+        size_hint_y: 0.48
+        do_scroll_x: True
+        do_scroll_y: True
+        bar_width: dp(8)
+        bar_color: utils.get_color_from_hex('#4A90E2')
+        bar_inactive_color: utils.get_color_from_hex('#404040')
+        scroll_type: ['bars']
+        effect_cls: 'ScrollEffect'
+        
+        GridLayout:
+            id: table_layout
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_x: None
+            width: max(self.minimum_width, 800)
+            spacing: dp(4)
+            padding: dp(10)
