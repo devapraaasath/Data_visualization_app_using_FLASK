@@ -1,0 +1,6 @@
+id,name,description,image_url
+1,Apple,Fruit that is red or green,http://127.0.0.1:5000/get_image/apple.png
+2,Banana,Fruit that is yellow and long,http://127.0.0.1:5000/get_image/banana.png
+3,Cherry,Fruit that is small and red,http://127.0.0.1:5000/get_image/cherry.jpg
+4,Dog,Domesticated animal known for loyalty,http://127.0.0.1:5000/get_image/dog.png
+5,Cat,Small domesticated animal that purrs,http://127.0.0.1:5000/get_image/cat.gif
