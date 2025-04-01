@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Data Management and Visualization App
 
 A web-based application that allows users to upload CSV/Excel files, view the data in a table format, and display images or GIFs associated with the data.
@@ -72,3 +73,6 @@ To manually add images that can be referenced in your CSV:
 2. In your CSV, reference them by filename in the `image_url` column (e.g., `cat.gif`)
 3. Run the application and upload your CSV
 
+=======
+# Data_visualization_app_using_FLASK
+>>>>>>> main
