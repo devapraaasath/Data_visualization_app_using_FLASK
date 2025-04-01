@@ -28,6 +28,14 @@ from datetime import datetime
 # Load the KV file
 Builder.load_file("design.kv")
 
+# Color constants
+DARK_BG = '#1A1A1A'
+HEADER_BG = '#2D2D2D'
+BORDER_COLOR = '#404040'
+SUCCESS_COLOR = '#2ECC71'
+ERROR_COLOR = '#E74C3C'
+BUTTON_BG = '#4A90E2'
+
 class AnimatedButton(ButtonBehavior, Image):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -42,47 +50,33 @@ class AnimatedButton(ButtonBehavior, Image):
         self.animation = Animation(scale_x=1, scale_y=1, duration=0.1).start(self)
 
 class ModernPopup(Popup):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.background_color = get_color_from_hex('#2D2D2D')
-        self.title_color = get_color_from_hex('#FFFFFF')
-        self.separator_color = get_color_from_hex('#404040')
+    def __init__(self, title, message, is_error=False):
+        super().__init__()
+        self.title = title
+        self.background_color = get_color_from_hex(HEADER_BG)
         self.size_hint = (None, None)
-        self.auto_dismiss = False
+        self.size = (dp(300), dp(180))
         
-        # Create custom title bar with close button
-        title_bar = BoxLayout(
-            size_hint_y=None,
-            height=dp(40),
-            padding=[dp(10), 0],
-            spacing=dp(10)
-        )
+        # Create content layout
+        content = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(10))
         
-        # Add title label
-        title_label = Label(
-            text=self.title,
-            color=self.title_color,
-            bold=True,
-            font_size=dp(16),
-            size_hint_x=0.9
-        )
-        title_bar.add_widget(title_label)
+        # Add message label
+        content.add_widget(Label(
+            text=message,
+            color=get_color_from_hex(ERROR_COLOR if is_error else SUCCESS_COLOR)
+        ))
         
         # Add close button
         close_button = Button(
-            text='×',
-            size_hint_x=None,
-            width=dp(30),
-            background_color=get_color_from_hex('#404040'),
-            color=get_color_from_hex('#FFFFFF'),
-            bold=True,
-            font_size=dp(20),
-            on_press=self.dismiss
+            text='Close',
+            size_hint_y=None,
+            height=dp(40),
+            background_color=get_color_from_hex(BORDER_COLOR)
         )
-        title_bar.add_widget(close_button)
+        close_button.bind(on_press=self.dismiss)
+        content.add_widget(close_button)
         
-        # Replace default title bar with custom one
-        self._title = title_bar
+        self.content = content
 
 class ImageUploadPopup(ModalView):
     def __init__(self, file_id, on_upload_complete=None, **kwargs):
@@ -172,229 +166,128 @@ class ImageUploadPopup(ModalView):
             ).open()
 
 class DataCell(BoxLayout):
-    def __init__(self, text='', is_header=False, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, text='', is_header=False):
+        super().__init__()
         self.orientation = 'vertical'
         self.size_hint_y = None
         self.height = dp(45) if is_header else dp(100)
-        self.padding = dp(10)
+        self.padding = dp(8)
         
-        # Initialize rectangle variables
-        self.rect = None
-        self.border = None
-        self.hover_color = None
-        
-        # Add background color with subtle border and hover effect
+        # Add background and border
         with self.canvas.before:
-            if is_header:
-                Color(*get_color_from_hex('#2D2D2D'))
-            else:
-                Color(*get_color_from_hex('#1A1A1A'))
-            self.rect = Rectangle(size=self.size, pos=self.pos)
-            
-            # Add subtle border
-            Color(*get_color_from_hex('#404040'))
+            Color(*get_color_from_hex(HEADER_BG if is_header else DARK_BG))
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+            Color(*get_color_from_hex(BORDER_COLOR))
             self.border = Rectangle(
-                size=(self.size[0] - dp(2), self.size[1] - dp(2)),
-                pos=(self.pos[0] + dp(1), self.pos[1] + dp(1))
+                pos=(self.pos[0] + 1, self.pos[1] + 1),
+                size=(self.size[0] - 2, self.size[1] - 2)
             )
-            
-            # Add hover effect using color opacity
-            if not is_header:
-                self.hover_color = Color(*get_color_from_hex('#2A2A2A'))
-                self.hover_rect = Rectangle(size=self.size, pos=self.pos)
         
-        self.bind(size=self._update_rect, pos=self._update_rect)
-        
-        # Add label with better styling
-        lbl = Label(
+        # Add label
+        self.add_widget(Label(
             text=str(text),
             bold=is_header,
-            color=get_color_from_hex('#FFFFFF') if is_header else get_color_from_hex('#B3B3B3'),
-            halign='center',
-            valign='middle',
-            text_size=(dp(120), None),
+            color=get_color_from_hex('#FFFFFF' if is_header else '#B3B3B3'),
             font_size=dp(14) if is_header else dp(12)
-        )
-        self.add_widget(lbl)
+        ))
+        
+        self.bind(size=self._update_rect, pos=self._update_rect)
     
     def _update_rect(self, instance, value):
-        if hasattr(self, 'rect') and self.rect:
-            self.rect.pos = instance.pos
-            self.rect.size = instance.size
-        if hasattr(self, 'border') and self.border:
-            self.border.pos = (instance.pos[0] + dp(1), instance.pos[1] + dp(1))
-            self.border.size = (instance.size[0] - dp(2), instance.size[1] - dp(2))
-        if hasattr(self, 'hover_rect') and self.hover_rect:
-            self.hover_rect.pos = instance.pos
-            self.hover_rect.size = instance.size
+        self.rect.pos = self.pos
+        self.rect.size = self.size
+        self.border.pos = (self.pos[0] + 1, self.pos[1] + 1)
+        self.border.size = (self.size[0] - 2, self.size[1] - 2)
 
 class ImageCell(BoxLayout):
-    def __init__(self, image_url, file_id=None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, image_url):
+        super().__init__()
         self.orientation = 'vertical'
         self.padding = dp(8)
-        self.spacing = dp(5)
-        self.file_id = file_id
-        self.image_url = image_url
-
-        # Create image container with shadow effect
-        self.image_container = BoxLayout(
-            orientation='vertical',
-            size_hint_y=1,
-            padding=dp(5)
-        )
         
-        # Add image with animation and better styling
-        self.image = AsyncImage(
-            source=self.image_url if self.image_url.startswith(('http://', 'https://')) else f'http://127.0.0.1:5000/get_image/{self.image_url}',
+        # Create image container
+        image_container = BoxLayout(orientation='vertical', padding=dp(5))
+        
+        # Add image
+        image = AsyncImage(
+            source=image_url if image_url.startswith(('http://', 'https://')) 
+                   else f'http://127.0.0.1:5000/get_image/{image_url}',
             size_hint_y=1,
             allow_stretch=True,
-            keep_ratio=True,
-            nocache=True
+            keep_ratio=True
         )
-        
-        # Add background and border to image container
-        with self.image_container.canvas.before:
-            Color(*get_color_from_hex('#2D2D2D'))
-            self.rect = Rectangle(size=self.image_container.size, pos=self.image_container.pos)
-            
-            # Add subtle border
-            Color(*get_color_from_hex('#404040'))
-            self.border = Rectangle(
-                size=(self.image_container.size[0] - dp(2), self.image_container.size[1] - dp(2)),
-                pos=(self.image_container.pos[0] + dp(1), self.image_container.pos[1] + dp(1))
-            )
-        
-        self.image_container.bind(size=self._update_rect, pos=self._update_rect)
-        self.image_container.add_widget(self.image)
-        self.add_widget(self.image_container)
-    
-    def _update_rect(self, instance, value):
-        if self.rect:
-            self.rect.pos = instance.pos
-            self.rect.size = instance.size
-        if self.border:
-            self.border.pos = (instance.pos[0] + dp(1), instance.pos[1] + dp(1))
-            self.border.size = (instance.size[0] - dp(2), instance.size[1] - dp(2))
+        image_container.add_widget(image)
+        self.add_widget(image_container)
 
 class TableRow(BoxLayout):
-    def __init__(self, is_header=False, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, is_header=False):
+        super().__init__()
         self.orientation = 'horizontal'
         self.size_hint_y = None
         self.height = dp(50) if is_header else dp(120)
-        self.size_hint_x = None
         self.spacing = dp(2)
         self.padding = dp(2)
         
-        # Initialize rectangle variables
-        self.rect = None
-        self.border = None
-        self.hover_color = None
-        
-        # Add better styling with subtle border and hover effect
         with self.canvas.before:
-            if is_header:
-                Color(*get_color_from_hex('#2D2D2D'))
-            else:
-                Color(*get_color_from_hex('#1A1A1A'))
-            self.rect = Rectangle(size=self.size, pos=self.pos)
-            
-            # Add subtle border
-            Color(*get_color_from_hex('#404040'))
-            self.border = Rectangle(
-                size=(self.size[0] - dp(2), self.size[1] - dp(2)),
-                pos=(self.pos[0] + dp(1), self.pos[1] + dp(1))
-            )
-            
-            # Add hover effect using color opacity
-            if not is_header:
-                self.hover_color = Color(*get_color_from_hex('#2A2A2A'))
-                self.hover_rect = Rectangle(size=self.size, pos=self.pos)
+            Color(*get_color_from_hex(HEADER_BG if is_header else DARK_BG))
+            self.rect = Rectangle(pos=self.pos, size=self.size)
         
         self.bind(size=self._update_rect, pos=self._update_rect)
     
     def _update_rect(self, instance, value):
-        if hasattr(self, 'rect') and self.rect:
-            self.rect.pos = instance.pos
-            self.rect.size = instance.size
-        if hasattr(self, 'border') and self.border:
-            self.border.pos = (instance.pos[0] + dp(1), instance.pos[1] + dp(1))
-            self.border.size = (instance.size[0] - dp(2), instance.size[1] - dp(2))
-        if hasattr(self, 'hover_rect') and self.hover_rect:
-            self.hover_rect.pos = instance.pos
-            self.hover_rect.size = instance.size
+        self.rect.pos = self.pos
+        self.rect.size = self.size
 
 class FileUploader(BoxLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
         self.current_file_id = None
-        self.upload_animation = None
-        self.search_animation = None
-        self.setup_animations()
-        self.bind(on_parent=self.on_parent)
-        
-        # Set search input placeholder and bind to on_text_validate
-        self.ids.search_input.hint_text = "Search in data..."
-        self.ids.search_input.hint_text_color = get_color_from_hex('#808080')
+        self.setup_search()
+    
+    def setup_search(self):
         self.ids.search_input.bind(on_text_validate=self.search_data)
         self.ids.search_button.bind(on_press=self.search_data)
-
-    def setup_animations(self):
-        # Fade in animation for the main layout
-        self.opacity = 0
-        self.animation = Animation(opacity=1, duration=0.5)
-        self.animation.start(self)
-
-    def on_parent(self, instance, parent):
-        if parent:
-            self.animation.start(self)
-
+        self.ids.search_input.hint_text = "Search in data..."
+        self.ids.search_input.hint_text_color = get_color_from_hex('#808080')
+        self.ids.search_input.foreground_color = [1, 1, 1, 1]
+    
+    def on_search_text(self, instance, value):
+        """Called when text changes in the search input"""
+        instance.foreground_color = [1, 1, 1, 1]  # White text
+        instance.hint_text_color = [0.5, 0.5, 0.5, 1]  # Gray hint text
+    
     def upload_file(self):
         if not self.ids.file_chooser.selection:
             self.show_error_popup("Please select a file first")
             return
-
+        
         file_path = self.ids.file_chooser.selection[0]
-        file_extension = os.path.splitext(file_path)[1].lower()
-
-        if file_extension not in ['.csv', '.xlsx', '.xls']:
+        if not file_path.lower().endswith(('.csv', '.xlsx', '.xls')):
             self.show_error_popup("Please select a CSV or Excel file")
             return
-
-        # Upload animation
-        self.upload_animation = Animation(
-            background_color=get_color_from_hex('#357ABD'),
-            duration=0.2
-        ) + Animation(
-            background_color=get_color_from_hex('#4A90E2'),
-            duration=0.2
-        )
-        self.upload_animation.start(self.ids.upload_button)
-
+        
         try:
-            files = {'file': open(file_path, 'rb')}
-            response = requests.post('http://127.0.0.1:5000/upload', files=files)
+            with open(file_path, 'rb') as file:
+                response = requests.post('http://127.0.0.1:5000/upload', files={'file': file})
             
             if response.status_code == 200:
                 self.show_success_popup("File uploaded successfully!")
-                self.process_file(response.json().get('filename'))
-                # Enable search functionality after successful upload
-                self.ids.search_input.disabled = False
-                self.ids.search_button.disabled = False
+                self.process_file(response.json()['filename'])
+                self.enable_search()
             else:
                 self.show_error_popup(f"Error uploading file: {response.text}")
         except Exception as e:
             self.show_error_popup(f"Error: {str(e)}")
-
+    
+    def enable_search(self):
+        self.ids.search_input.disabled = False
+        self.ids.search_button.disabled = False
+    
     def process_file(self, filename):
         try:
             response = requests.post('http://127.0.0.1:5000/process', json={'filename': filename})
-            
             if response.status_code == 200:
-                result = response.json()
-                self.current_file_id = result.get('file_id')
+                self.current_file_id = response.json()['file_id']
                 self.fetch_data(self.current_file_id)
             else:
                 self.show_error_popup(f'File processing failed: {response.json().get("error", "")}')
@@ -404,203 +297,82 @@ class FileUploader(BoxLayout):
     def fetch_data(self, file_id):
         try:
             response = requests.get(f'http://127.0.0.1:5000/get_data/{file_id}')
-            
             if response.status_code == 200:
-                data = response.json().get('data', [])
-                self.display_data(data)
+                self.display_data(response.json()['data'])
             else:
                 self.show_error_popup(f'Failed to fetch data: {response.json().get("error", "")}')
         except Exception as e:
             self.show_error_popup(f'Connection error: {str(e)}')
     
     def display_data(self, data):
-        # Update the label with the number of records
-        self.ids.result_label.text = f'Displaying {len(data)} records'
-        
-        # Clear the table layout
-        table_layout = self.ids.table_layout
-        table_layout.clear_widgets()
+        # Setup table
+        table = self.ids.table_layout
+        table.clear_widgets()
         
         if not data:
-            table_layout.add_widget(Label(
-                text="No data available",
-                color=get_color_from_hex('#B3B3B3'),
-                size_hint_y=None,
-                height=dp(50)
-            ))
             return
-            
-        # Get headers from first record
+        
         headers = list(data[0].keys())
+        table.width = max(len(headers) * dp(150), Window.width - dp(40))
         
-        # Calculate total width based on number of columns (150dp per column)
-        total_width = len(headers) * dp(150)
-        
-        # Set table width to calculated width or window width, whichever is larger
-        table_layout.width = max(total_width, Window.width - dp(40))
-        
-        # Create header row
+        # Add header row
         header_row = TableRow(is_header=True)
-        header_row.width = table_layout.width
-        
+        header_row.width = table.width
         for header in headers:
             cell = DataCell(text=header, is_header=True)
             cell.size_hint_x = 1 / len(headers)
             header_row.add_widget(cell)
-        
-        table_layout.add_widget(header_row)
+        table.add_widget(header_row)
         
         # Add data rows with animation
         for i, item in enumerate(data):
             row = TableRow()
-            row.width = table_layout.width
-            row.opacity = 0  # Start with 0 opacity for animation
+            row.width = table.width
             
             for key in headers:
-                if key == 'image_url':
-                    cell = ImageCell(
-                        image_url=item.get(key, ''),
-                        file_id=self.current_file_id
-                    )
-                else:
-                    cell = DataCell(text=item.get(key, ''))
+                cell = (ImageCell(item.get(key, '')) if key == 'image_url' 
+                       else DataCell(text=item.get(key, '')))
                 cell.size_hint_x = 1 / len(headers)
                 row.add_widget(cell)
             
-            table_layout.add_widget(row)
-            
-            # Animate row appearance with proper delay
+            table.add_widget(row)
             anim = Animation(opacity=1, duration=0.3)
             Clock.schedule_once(lambda dt, r=row: anim.start(r), i * 0.05)
-        
-        # Update scroll view
-        self.ids.table_scroll.scroll_y = 0
-        self.ids.table_scroll.scroll_x = 0
-    
-    def show_image_upload(self, file_id):
-        popup = ImageUploadPopup(
-            file_id=file_id,
-            on_upload_complete=lambda: self.fetch_data(self.current_file_id)
-        )
-        popup.open()
     
     def search_data(self, instance=None):
         if not self.current_file_id:
             self.show_error_popup("Please upload a file first")
             return
-            
+        
         query = self.ids.search_input.text.strip()
         if not query:
             self.show_error_popup("Please enter a search query")
             return
-
-        # Search animation
-        self.search_animation = Animation(
-            background_color=get_color_from_hex('#27AE60'),
-            duration=0.2
-        ) + Animation(
-            background_color=get_color_from_hex('#2ECC71'),
-            duration=0.2
-        )
-        self.search_animation.start(self.ids.search_button)
-
+        
         try:
             response = requests.post('http://127.0.0.1:5000/search', 
-                                    json={'file_id': self.current_file_id, 'query': query})
+                                  json={'file_id': self.current_file_id, 'query': query})
             if response.status_code == 200:
-                search_results = response.json().get('results', [])
-                if not search_results:
+                results = response.json()['results']
+                if not results:
                     self.show_error_popup("No results found")
                     return
-                self.display_data(search_results)
+                self.display_data(results)
             else:
                 self.show_error_popup(f"Error searching data: {response.text}")
         except Exception as e:
             self.show_error_popup(f"Error: {str(e)}")
     
     def show_error_popup(self, message):
-        content = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(10))
-        
-        # Add message label with better styling
-        content.add_widget(Label(
-            text=message,
-            color=get_color_from_hex('#E74C3C'),
-            size_hint_y=0.7,
-            text_size=(dp(250), None),
-            halign='center',
-            valign='middle'
-        ))
-        
-        # Add close button with better styling
-        close_button = Button(
-            text='Close',
-            size_hint_y=None,
-            height=dp(40),
-            background_color=get_color_from_hex('#404040'),
-            color=get_color_from_hex('#FFFFFF'),
-            bold=True,
-            font_size=dp(14)
-        )
-        content.add_widget(close_button)
-        
-        popup = ModernPopup(
-            title='Error',
-            content=content,
-            size_hint=(None, None),
-            size=(dp(300), dp(180)),
-            auto_dismiss=True
-        )
-        
-        close_button.bind(on_press=popup.dismiss)
-        popup.open()
-
+        ModernPopup(title='Error', message=message, is_error=True).open()
+    
     def show_success_popup(self, message):
-        content = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(10))
-        
-        # Add message label with better styling
-        content.add_widget(Label(
-            text=message,
-            color=get_color_from_hex('#2ECC71'),
-            size_hint_y=0.7,
-            text_size=(dp(250), None),
-            halign='center',
-            valign='middle'
-        ))
-        
-        # Add close button with better styling
-        close_button = Button(
-            text='Close',
-            size_hint_y=None,
-            height=dp(40),
-            background_color=get_color_from_hex('#4A90E2'),
-            color=get_color_from_hex('#FFFFFF'),
-            bold=True,
-            font_size=dp(14)
-        )
-        content.add_widget(close_button)
-        
-        popup = ModernPopup(
-            title='Success',
-            content=content,
-            size_hint=(None, None),
-            size=(dp(300), dp(180)),
-            auto_dismiss=True
-        )
-        
-        close_button.bind(on_press=popup.dismiss)
-        popup.open()
-
-    def on_search_text(self, instance, value):
-        # This method will be called whenever the text changes
-        # We can use this to update the search input's appearance
-        instance.foreground_color = [1, 1, 1, 1]  # White text
-        instance.hint_text_color = [0.5, 0.5, 0.5, 1]  # Gray hint text
+        ModernPopup(title='Success', message=message, is_error=False).open()
 
 class DataApp(App):
     def build(self):
-        # Set window size and title
         Window.size = (1200, 800)
-        Window.clearcolor = get_color_from_hex('#1A1A1A')
+        Window.clearcolor = get_color_from_hex(DARK_BG)
         return FileUploader()
 
 if __name__ == '__main__':
